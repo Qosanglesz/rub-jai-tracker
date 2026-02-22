@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: rubjai_postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: rubjaidb
+    ports:
+      - '5432:5432'
+    volumes:
+      - rubjai_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  rubjai_pgdata:
