@@ -1,6 +1,5 @@
 <template>
   <div class="space-y-6">
-    <!-- Page Header -->
     <PageHeader title="Dashboard" subtitle="Your monthly financial summary">
       <template #action>
         <div class="flex items-center gap-2">
@@ -16,42 +15,26 @@
 
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      <StatCard
-        label="Remaining Balance"
-        :value="`฿${formatNumber(summary.balance)}`"
+      <StatCard label="Remaining Balance" :value="`฿${formatNumber(summary.balance)}`"
         :icon="WalletIcon"
         :icon-bg-class="summary.balance >= 0 ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-600'"
-        :value-class="summary.balance >= 0 ? 'text-gray-900' : 'text-red-600'"
-      />
-      <StatCard
-        label="Total Income"
-        :value="`฿${formatNumber(summary.totalIncome)}`"
-        :icon="TrendingUpIcon"
-        icon-bg-class="bg-green-100 text-green-600"
-      />
-      <StatCard
-        label="Total Expense"
-        :value="`฿${formatNumber(summary.totalExpense)}`"
-        :icon="TrendingDownIcon"
-        icon-bg-class="bg-red-100 text-red-600"
-      />
-      <StatCard
-        label="Transactions"
-        :value="`${summary.transactionCount} items`"
-        :icon="ActivityIcon"
-        icon-bg-class="bg-indigo-100 text-indigo-600"
-      />
+        :value-class="summary.balance >= 0 ? 'text-gray-900' : 'text-red-600'" />
+      <StatCard label="Total Income" :value="`฿${formatNumber(summary.totalIncome)}`"
+        :icon="TrendingUpIcon" icon-bg-class="bg-green-100 text-green-600" />
+      <StatCard label="Total Expense" :value="`฿${formatNumber(summary.totalExpense)}`"
+        :icon="TrendingDownIcon" icon-bg-class="bg-red-100 text-red-600" />
+      <StatCard label="Transactions" :value="`${summary.transactionCount} items`"
+        :icon="ActivityIcon" icon-bg-class="bg-indigo-100 text-indigo-600" />
     </div>
 
-    <!-- Recent Transactions & Savings Goals -->
+    <!-- Recent Transactions & Goals Teaser -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-      <!-- Recent Transactions -->
       <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-6">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-base font-semibold text-gray-900">Recent Transactions</h2>
           <router-link to="/transactions" class="text-sm font-medium text-blue-600 hover:text-blue-500">View all</router-link>
         </div>
-        <div v-if="loading" class="flex justify-center py-8">
+        <div v-if="isLoading" class="flex justify-center py-8">
           <LoaderIcon class="h-8 w-8 text-blue-500 animate-spin" />
         </div>
         <div v-else-if="recentTransactions.length === 0" class="text-center py-8 text-gray-400 text-sm">
@@ -61,10 +44,8 @@
           <li v-for="txn in recentTransactions" :key="txn.id" class="py-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <div
-                  class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                  :class="txn.category?.type === 'INCOME' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
-                >
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  :class="txn.category?.type === 'INCOME' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'">
                   <component :is="txn.category?.type === 'INCOME' ? TrendingUpIcon : TrendingDownIcon" class="w-4 h-4" />
                 </div>
                 <div>
@@ -72,10 +53,8 @@
                   <p class="text-xs text-gray-400">{{ new Date(txn.date).toLocaleDateString('th-TH') }}</p>
                 </div>
               </div>
-              <span
-                class="text-sm font-bold"
-                :class="txn.category?.type === 'INCOME' ? 'text-green-600' : 'text-red-600'"
-              >
+              <span class="text-sm font-bold"
+                :class="txn.category?.type === 'INCOME' ? 'text-green-600' : 'text-red-600'">
                 {{ txn.category?.type === 'INCOME' ? '+' : '-' }}฿{{ formatNumber(txn.amount) }}
               </span>
             </div>
@@ -83,7 +62,6 @@
         </ul>
       </div>
 
-      <!-- Savings Goals Teaser -->
       <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-6">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-base font-semibold text-gray-900">Savings Goals</h2>
@@ -93,12 +71,9 @@
           <TargetIcon class="mx-auto h-10 w-10 text-gray-300 mb-3" />
           <p class="text-sm font-medium text-gray-700">Track your dreams</p>
           <p class="text-xs text-gray-400 mt-1 mb-4">Set financial goals to stay motivated!</p>
-          <router-link
-            to="/goals"
-            class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors"
-          >
-            <PlusIcon class="h-4 w-4" />
-            New Goal
+          <router-link to="/goals"
+            class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors">
+            <PlusIcon class="h-4 w-4" />New Goal
           </router-link>
         </div>
       </div>
@@ -107,19 +82,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import apiClient from '../api/client';
-import { toast } from 'vue-sonner';
-import {
-  WalletIcon, TrendingUpIcon, TrendingDownIcon, ActivityIcon,
-  TargetIcon, PlusIcon, LoaderIcon
-} from 'lucide-vue-next';
+import { ref } from 'vue';
+import { WalletIcon, TrendingUpIcon, TrendingDownIcon, ActivityIcon, TargetIcon, PlusIcon, LoaderIcon } from 'lucide-vue-next';
 import PageHeader from '../components/ui/PageHeader.vue';
 import StatCard from '../components/ui/StatCard.vue';
-import type { Transaction, DashboardSummary } from '../types';
+import { useAnalytics } from '../composables/useAnalytics';
 
-// ==================== State ====================
-const loading = ref(true);
 const selectedMonth = ref(new Date().getMonth() + 1);
 const selectedYear = ref(new Date().getFullYear());
 
@@ -127,37 +95,8 @@ const months = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
 const years = Array.from({ length: 5 }, (_, i) => selectedYear.value - i);
 
-const summary = ref<DashboardSummary>({
-  totalIncome: 0,
-  totalExpense: 0,
-  balance: 0,
-  transactionCount: 0,
-});
+const { summary, recentTransactions, isLoading } = useAnalytics(selectedYear, selectedMonth);
 
-const recentTransactions = ref<Transaction[]>([]);
-
-// ==================== API ====================
-const fetchDashboardData = async () => {
-  loading.value = true;
-  try {
-    const [summaryRes, txnsRes] = await Promise.all([
-      apiClient.get('/analytics/summary', { params: { year: selectedYear.value, month: selectedMonth.value } }),
-      apiClient.get('/transactions/monthly', { params: { year: selectedYear.value, month: selectedMonth.value } }),
-    ]);
-    summary.value = summaryRes.data;
-    recentTransactions.value = txnsRes.data.slice(0, 5);
-  } catch {
-    toast.error('Failed to load dashboard data');
-  } finally {
-    loading.value = false;
-  }
-};
-
-// ==================== Helpers ====================
 const formatNumber = (num: number) =>
   Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-// ==================== Lifecycle ====================
-watch([selectedMonth, selectedYear], fetchDashboardData);
-onMounted(fetchDashboardData);
 </script>
